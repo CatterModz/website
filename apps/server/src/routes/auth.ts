@@ -1,25 +1,41 @@
 import { Hono } from "hono";
-import { setCookie, getCookie } from "hono/cookie"
-import { db, discordUsers } from "../../../../packages/db";
+import { getSignedCookie, setSignedCookie, deleteCookie } from "hono/cookie";
+import { randomBytes } from "node:crypto";
 import { eq } from "drizzle-orm";
+import { db, discordUsers } from "../../../../packages/db";
 
 export const authRouter = new Hono();
 
-authRouter.get("/discord", (c) => {
-    console.log("client_id:", process.env.DISCORD_CLIENT_ID);
-    console.log("redirect_uri:", process.env.DISCORD_REDIRECT_URI);
+const secret = process.env.COOKIE_SECRET!;
+const cookie = {
+    httpOnly: true,
+    sameSite: "Lax" as const,
+    path: "/",
+    secure: process.env.NODE_ENV === "production",
+};
+
+authRouter.get("/discord", async (c) => {
+    const state = randomBytes(16).toString("base64url");
+    await setSignedCookie(c, "oauth_state", state, secret, { ...cookie, maxAge: 600 });
+
     const params = new URLSearchParams({
         client_id: process.env.DISCORD_CLIENT_ID!,
         redirect_uri: process.env.DISCORD_REDIRECT_URI!,
         response_type: "code",
         scope: "identify email",
+        state,
     });
     return c.redirect(`https://discord.com/api/oauth2/authorize?${params}`);
 });
 
 authRouter.get("/discord/callback", async (c) => {
     const code = c.req.query("code");
-    if (!code) return c.text("Missing code", 400);
+    const expected = await getSignedCookie(c, secret, "oauth_state");
+    deleteCookie(c, "oauth_state", { path: "/" });
+
+    if (!code || !expected || expected !== c.req.query("state")) {
+        return c.text("Bad request", 400);
+    }
 
     const tokenRes = await fetch("https://discord.com/api/oauth2/token", {
         method: "POST",
@@ -33,11 +49,13 @@ authRouter.get("/discord/callback", async (c) => {
         }),
     });
     const { access_token } = await tokenRes.json();
+    if (!tokenRes.ok || !access_token) return c.text("Discord auth failed", 502);
 
     const userRes = await fetch("https://discord.com/api/users/@me", {
         headers: { Authorization: `Bearer ${access_token}` },
     });
     const user = await userRes.json();
+    if (!userRes.ok || !user.id) return c.text("Discord auth failed", 502);
 
     await db.insert(discordUsers).values({
         id: user.id,
@@ -46,26 +64,22 @@ authRouter.get("/discord/callback", async (c) => {
         avatar: user.avatar,
     }).onConflictDoUpdate({
         target: discordUsers.id,
-        set: {
-            username: user.username, avatar: user.avatar,
-        }
-    })
-
-    setCookie(c, "session", user.id, {
-        httpOnly: true,
-        path: "/",
-        sameSite: "Lax",
+        set: { email: user.email, username: user.username, avatar: user.avatar },
     });
 
-    return c.redirect("http://localhost:5173/");
+    await setSignedCookie(c, "session", user.id, secret, { ...cookie, maxAge: 60 * 60 * 24 * 30 });
+    return c.redirect(process.env.FRONTEND_URL ?? "http://localhost:5173");
 });
 
 authRouter.get("/me", async (c) => {
-    const id = getCookie(c, "session");
-    if (!id) return c.json(null, 401)
+    const id = await getSignedCookie(c, secret, "session");
+    if (!id) return c.json(null, 401);
 
     const [user] = await db.select().from(discordUsers).where(eq(discordUsers.id, id));
-    if (!user) return c.json(null, 401)
+    return user ? c.json(user) : c.json(null, 401);
+});
 
-    return c.json(user)
+authRouter.post("/logout", (c) => {
+    deleteCookie(c, "session", { path: "/" });
+    return c.json({ ok: true });
 });

@@ -1,15 +1,13 @@
-import { useEffect, useState } from "react";
+import {useStateFromStores} from "./useStateFromStores.ts";
+import {AuthenticationStore} from "../stores/AuthStore.ts";
 
 export function useAuth() {
-    const [user, setUser] = useState(null);
-    const [loading, setLoading] = useState(true);
-
-    useEffect(() => {
-        fetch("http://localhost:3001/api/auth/me", { credentials: "include" })
-            .then((r) => (r.ok ? r.json() : null))
-            .then((d) => setUser(d))
-            .finally(() => setLoading(false));
-    }, []);
+    const { user, loading } = useStateFromStores(AuthenticationStore, () => {
+        return {
+            user: AuthenticationStore.getCurrentUser(),
+            loading: false,
+        };
+    });
 
     return { user, loading };
 }

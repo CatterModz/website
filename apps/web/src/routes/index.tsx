@@ -5,7 +5,6 @@ export default function Home() {
 
     if (loading) return <div>Loading...</div>;
 
-    console.log(user)
     return (
         <div>
             <h1>Welcome</h1>
