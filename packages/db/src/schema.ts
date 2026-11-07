@@ -40,7 +40,7 @@ export const communities = pgTable("communities", {
     
     // atomic added these
     image_cover: text("image_cover"),
-    image_ico
+    image_ico: text("image_ico"),
 });
 
 export const aiUsageEnum = pgEnum("ai_usage", ["none", "partial", "full"]);
