@@ -1,0 +1,14 @@
+{
+  "R.E.P.O": {
+    "id": "repo",
+    "name": "R.E.P.O",
+    "description": "A community for developers to share and collaborate on open-source projects.",
+    "invite_link": "https://discord.gg/vPJtKhYAFe",
+    "tags": [
+      {
+        "name": "Open Source",
+        "color": "#FFCFF8"
+      }
+    ]
+  }
+}

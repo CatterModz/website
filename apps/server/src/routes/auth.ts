@@ -1,10 +1,10 @@
-import { Hono } from "hono";
+import { authRouter } from "@server/routes/communities/hono";
 import { getSignedCookie, setSignedCookie, deleteCookie } from "hono/cookie";
 import { randomBytes } from "node:crypto";
 import { eq } from "drizzle-orm";
 import { db, discordUsers } from "../../../../packages/db";
 
-export const authRouter = new Hono();
+export { authRouter };
 
 const secret = process.env.COOKIE_SECRET!;
 const cookie = {

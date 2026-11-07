@@ -1,5 +1,28 @@
 {
   "files": [],
+  "aliases": {
+    "@web": "./src",
+    "@routes": "./src/routes",
+    "@components": "./src/components",
+    "@assets": "./src/assets",
+    "@utils": "./src/utils",
+    "@hooks": "./src/hooks",
+    "@stores": "./src/stores",
+    "@css": "./src/css"
+  },
+  "compilerOptions": {
+    "paths": {
+      "@web": ["./src"],
+      "@web/*": ["./src/*"],
+      "@routes/*": ["./src/routes/*"],
+      "@components/*": ["./src/components/*"],
+      "@assets/*": ["./src/assets/*"],
+      "@utils/*": ["./src/utils/*"],
+      "@hooks/*": ["./src/hooks/*"],
+      "@stores/*": ["./src/stores/*"],
+      "@css/*": ["./src/css/*"]
+    }
+  },
   "references": [
     { "path": "./tsconfig.app.json" },
     { "path": "./tsconfig.node.json" }
