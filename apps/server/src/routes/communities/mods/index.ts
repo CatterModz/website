@@ -4,6 +4,12 @@ import {apiError, useCommunities, useModsFromCommunity} from "@server/lib/utils"
 import {db} from "../../../../../../packages/db";
 import {communitiesRouter} from "../hono";
 
+communitiesRouter.get("/all", async (c) => {
+    // lazy way to get all
+    const data = await db.select().from(communities).where(eq(communities.is_public, true));
+    return c.json(data);
+});
+
 communitiesRouter.get("/:communityId/mods", async (c) => {
     const communityId = c.req.param("communityId");
     const [community]: typeof communities.$inferSelect[] = await useCommunities(communityId);

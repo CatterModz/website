@@ -37,6 +37,8 @@ export const communities = pgTable("communities", {
     tags: text("tags").array(),
     created_at: timestamp("created_at").defaultNow(),
     updated_at: timestamp("updated_at").defaultNow(),
+
+    is_public: boolean("is_public").default(true),
     
     // atomic added these
     image_cover: text("image_cover"),

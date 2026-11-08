@@ -22,13 +22,21 @@ export function DynamicCommunity() {
     const [error, setError] = useState<string | null>(null);
 
     async function handleUpload() {
+        const file = fileRef.current?.files?.[0];
+        if (!file) return;
+
+        const form = new FormData();
+        form.append("file", file);
+        form.append("name", "test");
+
+        setUploading(true);
         const res = await fetch(Endpoints.uploadModToCommunity(community.id), {
             method: "POST",
-            body: JSON.stringify({
-                name: "test"
-            }),
+            body: form,
             credentials: "include",
         });
+        setUploading(false);
+        if (!res.ok) setError(await res.text());
     }
 
     return <>
